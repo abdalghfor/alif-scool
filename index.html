@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #365d32; --secondary: #ddac80; --accent: #d8b473; --danger: #e74c3c; --bg: #fdfaf5; }
-        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
         .nav-bar { display: flex; background: var(--primary); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .nav-bar button { flex: 1; background: none; border: none; color: white; padding: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; font-family: 'Tajawal'; }
         .nav-bar button.active { border-bottom: 4px solid var(--accent); background: rgba(255,255,255,0.1); }
@@ -36,10 +36,9 @@
     <div class="container">
         <h2 style="text-align:center; color: var(--primary); margin:0;">رصد الحضور اليومي</h2>
         <div style="height: 4px; width: 50px; background: var(--accent); margin: 10px auto 20px;"></div>
-        <select id="classSel" onchange="getStudents()" style="width:100%; padding:12px; border-radius:12px; border:2px solid var(--secondary); font-family: 'Tajawal'; font-size: 16px;">
+        <select id="classSel" onchange="getStudents()" style="width:100%; padding:12px; border-radius:12px; border:2px solid var(--secondary); font-family: 'Tajawal';">
             <option value="">-- اختر الصف الدراسي --</option>
         </select>
-        <div id="loading" style="display:none; text-align:center; padding:10px;">جاري جلب البيانات...</div>
         <div id="studentList" style="margin-top:20px;"></div>
         <button id="revBtn" class="btn-main" style="display:none;" onclick="openRev()">مراجعة الإحصائية والتحقق</button>
     </div>
@@ -64,7 +63,7 @@
         </div>
 
         <h3 style="color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px;">كشف الغائبين حسب الصفوف:</h3>
-        <div id="absentDisplay" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; margin-top: 15px;"></div>
+        <div id="absentDisplay" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:15px; margin-top: 15px;"></div>
     </div>
 </div>
 
@@ -82,8 +81,7 @@
 </div>
 
 <script>
-    // الرابط الخاص بك
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwdFoEGJUIghKVkLigpO7l3D14uNzVxsKS462EWcVi19gSGFlWrJQjMpbLVWHfqJ6D5/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQQq2e7og_-Hj3YQYQSij2Ugt6m46_U_CDgO2lYXlZsx1yFzRpNYZLRUkXdANBHlyr/exec";
     
     let currentData = [];
 
@@ -94,16 +92,10 @@
         document.getElementById(id === 'teacher' ? 't-btn' : 'a-btn').classList.add('active');
     }
 
-    // التعديل المطلوب: طلب الرمز دون كتابته في الرسالة
     function checkAdminAccess() {
         let code = prompt("يرجى إدخال رمز دخول الإدارة للمتابعة:");
-        if (code === "2004") { 
-            showTab('admin'); 
-            initAdmin(); 
-        }
-        else { 
-            alert("⚠️ الرمز غير صحيح! لا يمكن الوصول للبيانات."); 
-        }
+        if (code === "2004") { showTab('admin'); initAdmin(); }
+        else { alert("⚠️ الرمز غير صحيح!"); }
     }
 
     window.onload = async () => {
@@ -118,10 +110,8 @@
     async function getStudents() {
         const cls = document.getElementById('classSel').value;
         if(!cls) return;
-        document.getElementById('loading').style.display = 'block';
         const resp = await fetch(`${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(cls)}`);
         const students = await resp.json();
-        document.getElementById('loading').style.display = 'none';
         const list = document.getElementById('studentList');
         list.innerHTML = '';
         students.forEach(s => {
@@ -158,7 +148,6 @@
         const cls = document.getElementById('classSel').value;
         const btn = document.getElementById('finalBtn');
         if(!code) return alert("يرجى إدخال الكود");
-        
         btn.disabled = true;
         btn.innerText = "جاري الحفظ...";
 
