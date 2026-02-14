@@ -1,41 +1,201 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الحضور - مدرسة ألف التعليمية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <title>نظام مدرسة ألف التعليمية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* إعدادات لتغطية الشاشة بالكامل وبشكل احترافي */
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden; /* يمنع ظهور شريط التمرير الخارجي */
-            background-color: #fdfaf5; /* لون خلفية التطبيق لضمان تناسق التحميل */
-        }
-
-        /* تنسيق الإطار (Iframe) ليظهر كأنه تطبيق أصلي */
-        iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
+        :root { --primary: #365d32; --secondary: #ddac80; --accent: #d8b473; --danger: #e74c3c; --bg: #fdfaf5; }
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
+        .nav-bar { display: flex; background: var(--primary); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .nav-bar button { flex: 1; background: none; border: none; color: white; padding: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; font-family: 'Tajawal'; }
+        .nav-bar button.active { border-bottom: 4px solid var(--accent); background: rgba(255,255,255,0.1); }
+        .container { max-width: 550px; margin: 25px auto; background: white; padding: 25px; border-radius: 20px; border: 1px solid var(--secondary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .student-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .status-select { padding: 8px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100px; text-align: center; }
+        .bg-present { background: var(--primary); color: white; }
+        .bg-absent { background: var(--danger); color: white; }
+        .bg-late { background: var(--accent); color: white; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; font-family: 'Tajawal'; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; backdrop-filter: blur(5px); }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-box { padding: 15px; border-radius: 12px; text-align: center; color: white; }
     </style>
 </head>
 <body>
 
-    <!-- تم وضع رابط التطبيق المحدث هنا -->
-    <iframe 
-        src="https://script.google.com/macros/s/AKfycbwVIdpAGkIPLmTaTXopZ5oOqFCzJlufIxvSIuGHRKD_4m-kXsAi8xfwyrPRyscBUD2N/exec"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        id="attendanceFrame">
-    </iframe>
+<div class="nav-bar">
+    <button id="t-btn" class="active" onclick="showTab('teacher')">واجهة المعلم</button>
+    <button id="a-btn" onclick="checkAdminAccess()">لوحة المتابعة الإدارية</button>
+</div>
 
+<div id="teacher" class="tab-content active">
+    <div class="container">
+        <h2 style="text-align:center; color: var(--primary); margin:0;">رصد الحضور اليومي</h2>
+        <div style="height: 4px; width: 50px; background: var(--accent); margin: 10px auto 20px;"></div>
+        <select id="classSel" onchange="getStudents()" style="width:100%; padding:12px; border-radius:12px; border:2px solid var(--secondary); font-family: 'Tajawal'; font-size: 16px;">
+            <option value="">-- اختر الصف الدراسي --</option>
+        </select>
+        <div id="loading" style="display:none; text-align:center; padding:10px;">جاري جلب البيانات...</div>
+        <div id="studentList" style="margin-top:20px;"></div>
+        <button id="revBtn" class="btn-main" style="display:none;" onclick="openRev()">مراجعة الإحصائية والتحقق</button>
+    </div>
+</div>
+
+<div id="admin" class="tab-content">
+    <div class="container" style="max-width: 850px;">
+        <h2 style="text-align:center; color: var(--primary); margin:0;">لوحة تحكم الإدارة</h2>
+        <div style="text-align:center; margin:20px 0; background: #eee; padding: 15px; border-radius: 15px;">
+            <label>اختر التاريخ: </label>
+            <input type="date" id="dashDate" onchange="updateDash()" style="padding:10px; border-radius:10px; border:1px solid var(--secondary); font-family: 'Tajawal';">
+        </div>
+
+        <div style="background:var(--primary); color:white; padding:15px; border-radius:15px; text-align:center; margin-bottom:15px; font-weight: bold;">
+            المجموع الكلي للطلاب المسجلين اليوم: <h2 id="ds-total" style="display:inline; margin:0 10px;">0</h2> طالب
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-box" style="background:var(--primary); opacity: 0.9;"> <small>حاضر</small> <h2 id="ds-p">0</h2> </div>
+            <div class="stat-box" style="background:var(--danger);"> <small>غائب</small> <h2 id="ds-a">0</h2> </div>
+            <div class="stat-box" style="background:var(--accent);"> <small>متأخر</small> <h2 id="ds-l">0</h2> </div>
+        </div>
+
+        <h3 style="color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px;">كشف الغائبين حسب الصفوف:</h3>
+        <div id="absentDisplay" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; margin-top: 15px;"></div>
+    </div>
+</div>
+
+<div id="revModal" class="modal">
+    <div class="container" style="margin-top:70px; border-top: 8px solid var(--accent);">
+        <h3 style="text-align:center; color:var(--primary); margin-top: 0;">تقرير المراجعة النهائي</h3>
+        <div id="revSummary" style="background:#f9f9f9; padding:20px; border-radius:15px; margin-bottom:20px; line-height:1.8;"></div>
+        
+        <label style="display:block; margin-bottom:10px; font-weight:bold;">أدخل كود التحقق:</label>
+        <input type="password" id="cCode" autocomplete="off" style="width:100%; padding:14px; border-radius:12px; border:2px solid var(--secondary); text-align:center; font-size:18px;">
+        
+        <button id="finalBtn" class="btn-main" onclick="submitFinal()">تأكيد وإرسال نهائي للشيت</button>
+        <button class="btn-main" style="background:#999; margin-top:10px;" onclick="document.getElementById('revModal').style.display='none'">رجوع لتعديل الحضور</button>
+    </div>
+</div>
+
+<script>
+    // الرابط الخاص بك
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwdFoEGJUIghKVkLigpO7l3D14uNzVxsKS462EWcVi19gSGFlWrJQjMpbLVWHfqJ6D5/exec";
+    
+    let currentData = [];
+
+    function showTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById(id === 'teacher' ? 't-btn' : 'a-btn').classList.add('active');
+    }
+
+    // التعديل المطلوب: طلب الرمز دون كتابته في الرسالة
+    function checkAdminAccess() {
+        let code = prompt("يرجى إدخال رمز دخول الإدارة للمتابعة:");
+        if (code === "2004") { 
+            showTab('admin'); 
+            initAdmin(); 
+        }
+        else { 
+            alert("⚠️ الرمز غير صحيح! لا يمكن الوصول للبيانات."); 
+        }
+    }
+
+    window.onload = async () => {
+        try {
+            const resp = await fetch(`${WEB_APP_URL}?action=getClasses`);
+            const classes = await resp.json();
+            const sel = document.getElementById('classSel');
+            classes.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+        } catch(e) { console.error("Error", e); }
+    };
+
+    async function getStudents() {
+        const cls = document.getElementById('classSel').value;
+        if(!cls) return;
+        document.getElementById('loading').style.display = 'block';
+        const resp = await fetch(`${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(cls)}`);
+        const students = await resp.json();
+        document.getElementById('loading').style.display = 'none';
+        const list = document.getElementById('studentList');
+        list.innerHTML = '';
+        students.forEach(s => {
+            list.innerHTML += `<div class="student-card">
+                <span>${s}</span>
+                <select class="status-select bg-present" data-name="${s}" onchange="updateStyle(this)">
+                    <option value="حاضر">حاضر</option>
+                    <option value="غائب">غائب</option>
+                    <option value="متأخر">متأخر</option>
+                </select>
+            </div>`;
+        });
+        document.getElementById('revBtn').style.display = 'block';
+    }
+
+    function updateStyle(el) {
+        el.className = 'status-select ' + (el.value === 'غائب' ? 'bg-absent' : (el.value === 'متأخر' ? 'bg-late' : 'bg-present'));
+    }
+
+    function openRev() {
+        const selects = document.querySelectorAll('.status-select');
+        let stats = { "حاضر": 0, "غائب": 0, "متأخر": 0 };
+        currentData = [];
+        selects.forEach(s => {
+            stats[s.value]++;
+            currentData.push({ name: s.dataset.name, status: s.value });
+        });
+        document.getElementById('revSummary').innerHTML = `<b>إحصائية الصف:</b><br>إجمالي: ${selects.length} | حاضر: ${stats['حاضر']} | غائب: ${stats['غائب']} | متأخر: ${stats['متأخر']}`;
+        document.getElementById('revModal').style.display = 'block';
+    }
+
+    async function submitFinal() {
+        const code = document.getElementById('cCode').value;
+        const cls = document.getElementById('classSel').value;
+        const btn = document.getElementById('finalBtn');
+        if(!code) return alert("يرجى إدخال الكود");
+        
+        btn.disabled = true;
+        btn.innerText = "جاري الحفظ...";
+
+        try {
+            const resp = await fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "saveAttendance", data: currentData, code: code, className: cls })
+            });
+            const msg = await resp.text();
+            alert(msg);
+            if(!msg.includes("Error")) location.reload();
+            else { btn.disabled = false; btn.innerText = "تأكيد وإرسال نهائي"; }
+        } catch(e) { alert("خطأ في الاتصال"); btn.disabled = false; }
+    }
+
+    function initAdmin() {
+        document.getElementById('dashDate').value = new Date().toISOString().split('T')[0];
+        updateDash();
+    }
+
+    async function updateDash() {
+        const date = document.getElementById('dashDate').value;
+        const resp = await fetch(`${WEB_APP_URL}?action=getDashboard&date=${date}`);
+        const res = await resp.json();
+        document.getElementById('ds-total').innerText = res.totalCount;
+        document.getElementById('ds-p').innerText = res.stats["حاضر"];
+        document.getElementById('ds-a').innerText = res.stats["غائب"];
+        document.getElementById('ds-l').innerText = res.stats["متأخر"];
+        const display = document.getElementById('absentDisplay');
+        display.innerHTML = '';
+        Object.keys(res.absentByClass).forEach(cls => {
+            display.innerHTML += `<div style="background:white; border:1px solid #ffcccc; border-radius:12px; overflow:hidden; margin-bottom:10px;">
+                <div style="background:var(--danger); color:white; padding:8px; text-align:center; font-weight:bold;">${cls}</div>
+                <div style="padding:10px; font-size:14px;">${res.absentByClass[cls].map(n => "📌 " + n).join('<br>')}</div>
+            </div>`;
+        });
+    }
+</script>
 </body>
 </html>
