@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام مدرسة ألف التعليمية</title>
+    <title>منصة ألف الرقمية الشاملة</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #365d32; --secondary: #ddac80; --accent: #d8b473; --danger: #e74c3c; --bg: #fdfaf5; }
-        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
+        :root { --primary: #365d32; --secondary: #ddac80; --accent: #d8b473; --danger: #e74c3c; --warning: #d35400; --bg: #fdfaf5; }
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
         .nav-bar { display: flex; background: var(--primary); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .nav-bar button { flex: 1; background: none; border: none; color: white; padding: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; font-family: 'Tajawal'; }
         .nav-bar button.active { border-bottom: 4px solid var(--accent); background: rgba(255,255,255,0.1); }
@@ -23,6 +23,7 @@
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; backdrop-filter: blur(5px); }
         .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
         .stat-box { padding: 15px; border-radius: 12px; text-align: center; color: white; }
+        .not-sub-badge { background:#fff3e0; border:1px solid #ffb74d; color:#e65100; padding:8px 15px; border-radius:10px; font-size:14px; font-weight:bold; }
     </style>
 </head>
 <body>
@@ -47,42 +48,39 @@
 <div id="admin" class="tab-content">
     <div class="container" style="max-width: 850px;">
         <h2 style="text-align:center; color: var(--primary); margin:0;">لوحة تحكم الإدارة</h2>
-        <div style="text-align:center; margin:20px 0; background: #eee; padding: 15px; border-radius: 15px;">
-            <label>اختر التاريخ: </label>
+        <div style="text-align:center; margin:20px 0;">
             <input type="date" id="dashDate" onchange="updateDash()" style="padding:10px; border-radius:10px; border:1px solid var(--secondary); font-family: 'Tajawal';">
         </div>
-
         <div style="background:var(--primary); color:white; padding:15px; border-radius:15px; text-align:center; margin-bottom:15px; font-weight: bold;">
             المجموع الكلي للطلاب المسجلين اليوم: <h2 id="ds-total" style="display:inline; margin:0 10px;">0</h2> طالب
         </div>
-
         <div class="stat-grid">
             <div class="stat-box" style="background:var(--primary); opacity: 0.9;"> <small>حاضر</small> <h2 id="ds-p">0</h2> </div>
             <div class="stat-box" style="background:var(--danger);"> <small>غائب</small> <h2 id="ds-a">0</h2> </div>
             <div class="stat-box" style="background:var(--accent);"> <small>متأخر</small> <h2 id="ds-l">0</h2> </div>
         </div>
+        
+        <h3 style="color: var(--warning); border-bottom: 2px solid var(--warning); padding-bottom: 5px;">⚠️ صفوف لم ترسل الحضور بعد:</h3>
+        <div id="notSubmittedContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 25px;"></div>
 
-        <h3 style="color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px;">كشف الغائبين حسب الصفوف:</h3>
-        <div id="absentDisplay" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:15px; margin-top: 15px;"></div>
+        <h3 style="color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px;">كشف الطلاب الغائبين (📌):</h3>
+        <div id="absentDisplay" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; margin-top: 15px;"></div>
     </div>
 </div>
 
 <div id="revModal" class="modal">
     <div class="container" style="margin-top:70px; border-top: 8px solid var(--accent);">
-        <h3 style="text-align:center; color:var(--primary); margin-top: 0;">تقرير المراجعة النهائي</h3>
+        <h3 style="text-align:center; color:var(--primary);">تقرير المراجعة والتحقق</h3>
         <div id="revSummary" style="background:#f9f9f9; padding:20px; border-radius:15px; margin-bottom:20px; line-height:1.8;"></div>
-        
-        <label style="display:block; margin-bottom:10px; font-weight:bold;">أدخل كود التحقق:</label>
+        <label style="display:block; margin-bottom:10px; font-weight:bold;">أدخل كود التحقق للمتابعة:</label>
         <input type="password" id="cCode" autocomplete="off" style="width:100%; padding:14px; border-radius:12px; border:2px solid var(--secondary); text-align:center; font-size:18px;">
-        
-        <button id="finalBtn" class="btn-main" onclick="submitFinal()">تأكيد وإرسال نهائي للشيت</button>
+        <button id="finalBtn" class="btn-main" onclick="submitFinal()">تأكيد وإرسال نهائي</button>
         <button class="btn-main" style="background:#999; margin-top:10px;" onclick="document.getElementById('revModal').style.display='none'">رجوع لتعديل الحضور</button>
     </div>
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQQq2e7og_-Hj3YQYQSij2Ugt6m46_U_CDgO2lYXlZsx1yFzRpNYZLRUkXdANBHlyr/exec";
-    
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzeKdBn7Mx_R6Ysk_PuWrJBSGiSlvj3fklR_mZWCFVO-HntRx5mE57_ogvseo8cqe9a/exec";
     let currentData = [];
 
     function showTab(id) {
@@ -139,7 +137,7 @@
             stats[s.value]++;
             currentData.push({ name: s.dataset.name, status: s.value });
         });
-        document.getElementById('revSummary').innerHTML = `<b>إحصائية الصف:</b><br>إجمالي: ${selects.length} | حاضر: ${stats['حاضر']} | غائب: ${stats['غائب']} | متأخر: ${stats['متأخر']}`;
+        document.getElementById('revSummary').innerHTML = `إجمالي الصف: ${selects.length}<br>حاضر: ${stats['حاضر']} | غائب: ${stats['غائب']} | متأخر: ${stats['متأخر']}`;
         document.getElementById('revModal').style.display = 'block';
     }
 
@@ -147,10 +145,8 @@
         const code = document.getElementById('cCode').value;
         const cls = document.getElementById('classSel').value;
         const btn = document.getElementById('finalBtn');
-        if(!code) return alert("يرجى إدخال الكود");
         btn.disabled = true;
-        btn.innerText = "جاري الحفظ...";
-
+        btn.innerText = "جاري الحفظ والتحقق...";
         try {
             const resp = await fetch(WEB_APP_URL, {
                 method: "POST",
@@ -158,9 +154,9 @@
             });
             const msg = await resp.text();
             alert(msg);
-            if(!msg.includes("Error")) location.reload();
+            if(!msg.includes("Error") && !msg.includes("عذراً")) location.reload();
             else { btn.disabled = false; btn.innerText = "تأكيد وإرسال نهائي"; }
-        } catch(e) { alert("خطأ في الاتصال"); btn.disabled = false; }
+        } catch(e) { alert("خطأ في الاتصال بالسحابة"); btn.disabled = false; }
     }
 
     function initAdmin() {
@@ -176,6 +172,13 @@
         document.getElementById('ds-p').innerText = res.stats["حاضر"];
         document.getElementById('ds-a').innerText = res.stats["غائب"];
         document.getElementById('ds-l').innerText = res.stats["متأخر"];
+        
+        const notSubContainer = document.getElementById('notSubmittedContainer');
+        notSubContainer.innerHTML = res.notSubmittedClasses.length ? "" : "✅ تم الإرسال من الجميع";
+        res.notSubmittedClasses.forEach(cls => {
+            notSubContainer.innerHTML += `<div class="not-sub-badge">${cls}</div>`;
+        });
+
         const display = document.getElementById('absentDisplay');
         display.innerHTML = '';
         Object.keys(res.absentByClass).forEach(cls => {
